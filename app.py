@@ -54,13 +54,36 @@ def get_data(config):
         log(f"ERR {e}")
         return 1
 
+def check_db(config):
+    try:
+        conexion = mysql.connector.connect(**config)
+        cursor = conexion.cursor()
+        consulta = f"SELECT now()"
+        cursor.execute(consulta)
+        resultado = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+        if int(resultado[0])>0:
+            return 0
+        else:
+            return 1
+    except Exception as e:
+        log(f"ERR {e}")
+        return 1
+
+
 while True:
-    trap=enviar_trap(keep_NM,db_host)
-    time.sleep(1)
-    data=get_data(config)
-    if((trap==0) and (data==0)):
-        log("Todo OK")
+    checkdb=check_db(config)
+    if checkdb==0:
+        trap=enviar_trap(keep_NM,db_host)
+        time.sleep(1)
+        data=get_data(config)
+        if((trap==0) and (data==0)):
+            log("Todo OK")
+        else:
+            trap=enviar_trap(keep_CR,vip)
+            log("FALLA")
     else:
         trap=enviar_trap(keep_CR,vip)
-        log("FALLA")
+        log("FALLA DB LOCAL")
     time.sleep(4)
