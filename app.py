@@ -58,7 +58,7 @@ def check_db(config):
     try:
         conexion = mysql.connector.connect(**config)
         cursor = conexion.cursor()
-        consulta = f"SELECT now()"
+        consulta = f"SELECT COUNT(*) FROM ALARMA WHERE  LASTTIME>=DATE_SUB(NOW(), INTERVAL 5 MINUTE)"
         cursor.execute(consulta)
         resultado = cursor.fetchone()
         cursor.close()
@@ -68,7 +68,7 @@ def check_db(config):
         else:
             return 1
     except Exception as e:
-        log(f"ERR {e}")
+        log(f"ERR check_db {e}")
         return 1
 
 
