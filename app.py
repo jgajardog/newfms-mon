@@ -2,6 +2,11 @@ import mysql.connector
 from os import getenv
 import subprocess
 import time
+import logging
+import datetime
+logging.basicConfig(encoding='utf-8', level=logging.INFO)
+def log(m):
+    logging.info(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}; {m}")
 
 db_user = getenv('J_MYSQL_USER')
 db_password = getenv('J_MYSQL_PASSWORD')
@@ -12,6 +17,7 @@ vip = getenv('J_VIP')
 
 keep_CR=f"KEEPALIVE*PENA_P1_KEEPALIVE_{buscar}_NEWFMS|NOC|*KEEPALIVE*Out Of Service*CR*11111111"
 keep_NM=f"KEEPALIVE*PENA_P1_KEEPALIVE_{buscar}_NEWFMS|NOC|*KEEPALIVE*In Service Normal*NM*11111111"
+
 config = {
     'user': db_user,
     'password': db_password,
@@ -27,8 +33,8 @@ def enviar_trap(alm, dst):
     try:
         subprocess.run(command, check=True)
         return 0
-    except subprocess.CalledProcessError as e:
-        print(f"Error al enviar trap: {e}")
+    except Exception as e:
+        log(f"Error al enviar trap: {e}")
         return 1
 
 def get_data(config):
@@ -38,15 +44,14 @@ def get_data(config):
         consulta = f"SELECT COUNT(*) FROM ALARMA WHERE TECNOLOGIA='KEEPALIVE' AND SEVERIDAD='NM' AND AMO REGEXP 'KEEPALIVE_{buscar}_NEWFMS' AND LASTTIME>=DATE_SUB(NOW(), INTERVAL 15 SECOND)"
         cursor.execute(consulta)
         resultado = cursor.fetchone()
-        #print(f"Total de registros en TABLA: {resultado[0]}")
         cursor.close()
         conexion.close()
         if int(resultado[0])>0:
             return 0
         else:
             return 1
-    except subprocess.CalledProcessError as e:
-        print(f"ERR {e}")
+    except Exception as e:
+        log(f"ERR {e}")
         return 1
 
 while True:
@@ -54,8 +59,8 @@ while True:
     time.sleep(1)
     data=get_data(config)
     if((trap==0) and (data==0)):
-        print("Todo OK")
+        log("Todo OK")
     else:
         trap=enviar_trap(keep_CR,vip)
-        print("FALLA")
+        log("FALLA")
     time.sleep(4)
